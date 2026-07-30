@@ -1,0 +1,5 @@
+[user]
+	name = Tom Stian Ingebretson
+	email = accounts@tomstiani.com
+[core]
+	excludesfile = /Users/tom.stian.ingebretson/.gitignore_global
