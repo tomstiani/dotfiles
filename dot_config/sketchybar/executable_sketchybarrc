@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+# Entry point. Wires up directories, global appearance, events, then sources
+# each item definition from items/. See:
+#   https://felixkratz.github.io/SketchyBar/config/items
+
+export PLUGIN_DIR="$CONFIG_DIR/plugins"
+export ITEM_DIR="$CONFIG_DIR/items"
+export UTIL_DIR="$CONFIG_DIR/utils"
+
+# SketchyBar execs plugin scripts directly, so they must be executable.
+# Ensure that on every load so a freshly added plugin can't silently fail.
+chmod +x "$PLUGIN_DIR"/*.sh 2>/dev/null
+
+source "$CONFIG_DIR/colors.sh"
+
+##### Custom Events #####
+# AeroSpace triggers this on every workspace change (see ~/.aerospace.toml).
+sketchybar --add event aerospace_workspace_change
+
+##### Bar Appearance #####
+# Bar background at ~20% opacity (80% transparent); blur softens it.
+BAR_TRANSPARENT="0x33${BAR_COLOR#0xff}"
+sketchybar --bar position=top height=38 blur_radius=30 color=$BAR_TRANSPARENT
+
+##### Global Defaults (applied to all items) #####
+default=(
+  padding_left=5
+  padding_right=5
+  icon.font="SF Pro:Semibold:15.0"
+  label.font="SF Pro:Semibold:15.0"
+  background.color=$ITEM_BG_COLOR
+  background.corner_radius=5
+  background.height=24
+  icon.color=$WHITE
+  label.color=$WHITE
+  icon.padding_left=10
+  icon.padding_right=4
+  label.padding_left=4
+  label.padding_right=10
+)
+sketchybar --default "${default[@]}"
+
+##### Items #####
+source "$ITEM_DIR/display_observer.sh"
+source "$ITEM_DIR/spaces.sh"
+source "$ITEM_DIR/media.sh"
+source "$ITEM_DIR/battery.sh"
+source "$ITEM_DIR/calendar.sh"
+source "$ITEM_DIR/sys_stats.sh"
+source "$ITEM_DIR/next_meeting.sh"
+
+##### Force all scripts to run once on load #####
+sketchybar --update
