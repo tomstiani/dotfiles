@@ -1,0 +1,51 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Editors & IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*.orig
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Logs & temp
+*.log
+*.tmp
+*.temp
+
+# pi / impeccable
+.impeccable.md
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Dependency dirs (belt-and-suspenders, projects should also ignore these)
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# OS package managers
+.vagrant/

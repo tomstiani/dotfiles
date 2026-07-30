@@ -1,0 +1,12 @@
+[commit.generation]
+command = "opencode run -m openai/gpt-5.1-codex-mini --variant fast"
+
+
+[post-switch]
+tmux = "[ -n \"$TMUX\" ] && tmux rename-window {{branch | sanitize}}"
+
+[post-start]
+zoxide = "zoxide add {{ worktree_path }} 2>/dev/null || true"
+
+[post-remove]
+zoxide = "zoxide remove {{ worktree_path }} 2>/dev/null || true"
