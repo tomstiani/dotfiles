@@ -1,3 +1,4 @@
 {{ if ne .chezmoi.os "darwin" }}
 dot_config/sketchybar/**
+dot_aerospace.toml
 {{ end }}
