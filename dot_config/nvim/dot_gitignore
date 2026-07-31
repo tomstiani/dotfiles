@@ -1,0 +1,27 @@
+# ── Kickstart originals ───────────────────────────────────────────
+tags
+test.sh
+.luarc.json
+nvim
+spell/
+
+# ── OS ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Lazy plugin data (lives in ~/.local/share/nvim, not here) ─────
+# lazy-lock.json is intentionally tracked so installs are reproducible
+# Uncomment the line below only if you want to stop tracking it:
+# lazy-lock.json
+
+# ── Neovim session / swap / backup files ──────────────────────────
+*.swp
+*.swo
+*~
+Session.vim
+
+# ── Secrets / local overrides ─────────────────────────────────────
+# Drop machine-specific config here and import it from init.lua:
+lua/local.lua
+local.lua
+.env

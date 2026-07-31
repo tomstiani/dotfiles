@@ -1,3 +1,13 @@
+*.env
+**/*.env
+*.local.env
+**/*.local.env
+
+**/*secret*
+**/*token*
+**/*apikey*
+**/*credential*
+
 {{ if ne .chezmoi.os "darwin" }}
 .config/sketchybar/**
 .aerospace.toml
