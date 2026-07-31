@@ -1,0 +1,24 @@
+# Auth credentials & tokens
+auth.json
+mcp-oauth/
+
+# Runtime session history
+sessions/
+run-history.jsonl
+
+# Generated caches
+mcp-cache.json
+mcp-npx-cache.json
+mcp-onboarding.json
+models-store.json
+
+# Auto-installed package repos and npm extension install state
+git/
+npm/
+
+# Auto-populated extensions directory
+extensions/
+
+# Temporary / compiled runtime files
+temp/
+.DS_Store
