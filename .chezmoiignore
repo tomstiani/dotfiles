@@ -1,18 +1,14 @@
+# General secrets guard
 *.env
 **/*.env
 *.local.env
 **/*.local.env
-
 **/*secret*
 **/*token*
 **/*apikey*
 **/*credential*
 
-{{ if ne .chezmoi.os "darwin" }}
-.config/sketchybar/**
-.aerospace.toml
-{{ end }}
-
+# Zsh
 .config/zsh/secrets.zsh
 
 # Pi local-only state
@@ -31,3 +27,9 @@
 .config/pi/extensions/**
 .config/pi/temp/**
 .config/pi/.DS_Store
+
+# Ignore if not Macbook
+{{ if ne .chezmoi.os "darwin" }}
+.config/sketchybar/**
+.aerospace.toml
+{{ end }}
