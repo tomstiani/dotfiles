@@ -25,6 +25,8 @@
 .config/pi/git/**
 .config/pi/npm/**
 .config/pi/extensions/**
+!.config/pi/extensions
+!.config/pi/extensions/chezmoi.ts
 .config/pi/temp/**
 .config/pi/.DS_Store
 
