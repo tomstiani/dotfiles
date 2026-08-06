@@ -41,22 +41,62 @@ Rules:
 - Describe the branch's overall goal, not a single commit
 - If a hygiene workflow enforces a ticket reference (e.g. `MA-1234` or a ClickUp URL), include it in the title or body
 
-**Body (no template):** Focus on the *why*, not the *what*. Use bullets, paragraphs, or checkboxes as appropriate. Keep it concise. Incorporate any specific requests from the user.
+**Body (no template):** Write for a teammate who has not followed the branch. Keep it short and plain.
+
+Use this structure unless the repo template says otherwise:
+
+```markdown
+Briefly: 1–2 plain sentences explaining what problem this solves and what reviewers should pay attention to.
+
+## Why
+- The problem or reason for the change.
+
+## What changed
+- The smallest useful summary of the code change.
+- Mention important non-changes, especially deferred work.
+
+## Tested
+- How this was checked.
+```
+
+Add a `## Follow-up` section only when there is real remaining work.
 
 ## 3. Humanize the Body
 
 Before pushing, run the PR body through the `humanizer` skill. PR descriptions are a hotbed of AI tells — catch and fix them.
 
-**Patterns most common in PR bodies:**
+**Plain-language rules:**
 
-- **AI vocabulary** — strip words like *enhance*, *crucial*, *pivotal*, *leverage*, *streamline*, *seamless*, *robust*, *ensure*
-- **Inline-header lists** — `**Scope:** Does the thing` → prose or a plain bullet list
-- **Significance inflation** — "marks a pivotal step forward" → just say what it does
-- **Passive voice** — "Tests were added" → "Added tests for X"
-- **Filler phrases** — "In order to" → "To", "Due to the fact that" → "Because"
-- **Generic positive conclusions** — cut any closing sentence that reads like a press release
-- **Em dash overuse** — replace with a comma or restructure the sentence
-- **Promotional language** — *groundbreaking*, *powerful*, *exciting* have no place in a PR body
+- Assume the reader lacks your branch context. Add one sentence of context before naming internals.
+- Prefer everyday verbs: "reads from", "falls back to", "we'll migrate later".
+- Delete project/process jargon unless the repo commonly uses it. If you must use it, explain it once.
+- Avoid words that require project-plan context unless the team uses them naturally: *cutover*, *read-path*, *behavior-neutral*, *migration pass*, *unified*, *composition*, *dual-read*, *Phase 4*, *foundations*.
+- Translate dense terms:
+  - "read-path cutover" → "the code now reads from X first"
+  - "behavior-neutral" → "no user-facing behavior change"
+  - "deferred to a consolidated migration pass" → "we'll migrate the content later"
+  - "dual-read" → "supporting both the old and new fields"
+- Avoid cramming implementation details into one paragraph. Use bullets.
+- Cut anything the reviewer can see from the diff unless it explains risk, intent, or testing.
+
+**AI tells to remove:**
+
+- Words like *enhance*, *crucial*, *pivotal*, *leverage*, *streamline*, *seamless*, *robust*, *ensure*
+- Inline-header lists: `**Scope:** Does the thing` → prose or a plain bullet list
+- Significance inflation: "marks a pivotal step forward" → just say what it does
+- Passive voice: "Tests were added" → "Added tests for X"
+- Filler phrases: "In order to" → "To", "Due to the fact that" → "Because"
+- Generic positive conclusions that read like a press release
+- Em dash overuse; use a comma or split the sentence
+- Promotional language: *groundbreaking*, *powerful*, *exciting*
+
+**Before/after calibration:**
+
+Bad:
+> Behavior-neutral read-path cutover for header, footer, and page-link to the unified Sanity link. Content migration is deferred to a consolidated migration pass.
+
+Better:
+> Header, footer, and page-link now read from the new Sanity link field first, then fall back to the old fields. Users should not see any behavior change. We are not migrating content in this PR; that will happen later.
 
 **Process:**
 1. Draft the body
@@ -64,7 +104,7 @@ Before pushing, run the PR body through the `humanizer` skill. PR descriptions a
 3. Apply the two-pass audit from the humanizer skill: draft → audit → final
 4. The result should read like a competent engineer wrote it in one sitting, not like it was assembled from templates
 
-**Quick calibration:** Would a teammate skim this and immediately know *why* the change was made, not just *what* changed? If not, rewrite.
+**Quick calibration:** Would a teammate outside this specific workstream understand this without Slack history or prior PRs? Would they know why the change exists, what changed, how it was tested, and what was intentionally left out? If not, rewrite.
 
 ## 4. Push & Create
 

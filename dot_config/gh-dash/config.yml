@@ -1,0 +1,27 @@
+repoPaths:
+  schibsted-smb/frontend-monorepo: ~/work/mittanbud/front/frontend-monorepo
+
+prSections:
+  - title: Needs My Review
+    filters: is:open review-requested:@me
+  - title: My Pull Requests
+    filters: is:open author:@me
+
+keybindings:
+  prs:
+    - key: W
+      name: open PR workspace
+      command: zsh -ic 'rpr "{{.RepoPath}}" "{{.PrNumber}}"'
+    - key: R
+      name: review in tuicr
+      command: tmux new-window -c {{.RepoPath}} 'tuicr pr {{.PrNumber}}'
+    - key: A
+      name: checkout + pi
+      command: >-
+        tmux new-window -c {{.RepoPath}}
+        'gh pr checkout {{.PrNumber}} && pi'
+    - key: T
+      name: checks in enhance
+      command: >-
+        tmux new-window
+        'gh enhance -R {{.RepoName}} {{.PrNumber}}'
