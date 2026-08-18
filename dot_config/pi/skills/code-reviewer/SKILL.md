@@ -1,9 +1,6 @@
 ---
 name: code-reviewer
-description: |
-  Shared code review checklist covering security, performance, correctness, maintainability, and testing.
-  Referenced by the self-review and pr-review skills. Also use directly when auditing code quality,
-  checking for security vulnerabilities, or reviewing code outside of a PR context.
+description: Shared code review checklist covering security, performance, correctness, maintainability, and testing. Use when reviewing code, auditing quality, or checking for security issues.
 license: MIT
 metadata:
   author: awesome-llm-apps
@@ -12,121 +9,36 @@ metadata:
 
 # Code Reviewer
 
-Shared rules and checklist used by [self-review](../self-review/SKILL.md) and [pr-review](../pr-review/SKILL.md).
-Also use directly when auditing code quality or reviewing code outside of a PR context.
+Use this checklist directly or from `self-review` and `pr-review`.
 
-## How to Use This Skill
+## Review order
 
-This skill contains **detailed rules** in the `rules/` directory, organized by category and priority.
+1. **Security** — injection, XSS, auth bypasses, secrets, unsafe dependencies, and trust-boundary validation.
+2. **Performance** — N+1 queries, unnecessary I/O, inefficient algorithms, leaks, and avoidable work.
+3. **Correctness** — error paths, null handling, race conditions, boundary cases, and data integrity.
+4. **Maintainability** — clear names, simple structure, type safety, duplication, and appropriate documentation.
+5. **Testing** — changed behavior, edge cases, failures, and useful integration coverage.
 
-### Quick Start
+## Process
 
-1. **Review [AGENTS.md](AGENTS.md)** for a complete compilation of all rules with examples
-2. **Reference specific rules** from `rules/` directory for deep dives
-3. **Follow priority order**: Security → Performance → Correctness → Maintainability
+- Read the task and surrounding code before judging the diff.
+- Report only actionable findings with file and line references.
+- State impact and a concrete fix; distinguish blocking issues from suggestions.
+- Note missing tests and residual risks.
+- Prefer deletion and simpler designs over speculative abstractions.
 
-### Available Rules
-
-**Security (CRITICAL)**
-- [SQL Injection Prevention](rules/security-sql-injection.md)
-- [XSS Prevention](rules/security-xss-prevention.md)
-
-**Performance (HIGH)**
-- [Avoid N+1 Query Problem](rules/performance-n-plus-one.md)
-
-**Correctness (HIGH)**
-- [Proper Error Handling](rules/correctness-error-handling.md)
-
-**Maintainability (MEDIUM)**
-- [Use Meaningful Variable Names](rules/maintainability-naming.md)
-- [Add Type Hints](rules/maintainability-type-hints.md)
-
-## Review Process
-
-### 1. **Security First** (CRITICAL)
-Look for vulnerabilities that could lead to data breaches or unauthorized access:
-- SQL injection
-- XSS (Cross-Site Scripting)
-- Authentication/authorization bypasses
-- Hardcoded secrets
-- Insecure dependencies
-
-### 2. **Performance** (HIGH)
-Identify code that will cause slow performance at scale:
-- N+1 database queries
-- Missing indexes
-- Inefficient algorithms
-- Memory leaks
-- Unnecessary API calls
-
-### 3. **Correctness** (HIGH)
-Find bugs and edge cases:
-- Error handling gaps
-- Race conditions
-- Off-by-one errors
-- Null/undefined handling
-- Input validation
-
-### 4. **Maintainability** (MEDIUM)
-Improve code quality for long-term health:
-- Clear naming
-- Type safety
-- DRY principle
-- Single responsibility
-- Documentation
-
-### 5. **Testing**
-Verify adequate coverage:
-- Unit tests for new code
-- Edge case testing
-- Error path testing
-- Integration tests where needed
-
----
-
-> For reviewing your own code before opening a PR, use the **[self-review](../self-review/SKILL.md)** skill.
-> For reviewing someone else's PR, use the **[pr-review](../pr-review/SKILL.md)** skill.
-
-## Output Format
-
-Structure your reviews as:
+## Output
 
 ```markdown
-This function retrieves user data but has critical security and reliability issues.
+## Critical
+- `path/file.ts:42` — Concrete issue, impact, and fix.
 
-## Critical Issues 🔴
+## Warnings
+- `path/file.ts:100` — Concrete issue, impact, and fix.
 
-1. **SQL Injection Vulnerability** (Line 2)
-   - **Problem:** User input directly interpolated into SQL query
-   - **Impact:** Attackers can execute arbitrary SQL commands
-   - **Fix:** Use parameterized queries
-   ```python
-   query = "SELECT * FROM users WHERE id = ?"
-   result = db.execute(query, (user_id,))
-   ```
+## Suggestions
+- `path/file.ts:150` — Optional improvement.
 
-## High Priority 🟠
-
-1. **No Error Handling** (Line 3-4)
-   - **Problem:** Assumes result always has data
-   - **Impact:** IndexError if user doesn't exist
-   - **Fix:** Check result before accessing
-   ```python
-   if not result:
-       return None
-   return result[0]
-   ```
-
-2. **Missing Type Hints** (Line 1)
-   - **Problem:** No type annotations
-   - **Impact:** Reduces code clarity and IDE support
-   - **Fix:** Add type hints
-   ```python
-   def get_user(user_id: int) -> Optional[Dict[str, Any]]:
-   ```
-
-## Recommendations
-- Add logging for debugging
-- Consider using an ORM to prevent SQL injection
-- Add input validation for user_id
+## Summary
+Overall assessment and remaining risk.
 ```

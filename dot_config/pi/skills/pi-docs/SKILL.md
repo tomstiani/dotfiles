@@ -1,46 +1,44 @@
 ---
 name: pi-docs
-description: Reference documentation for pi, the coding agent harness. Use when asked about pi itself, its SDK, extensions, themes, skills, TUI, keybindings, prompt templates, custom providers, models, or packages.
+description: Reference documentation for pi, its SDK, extensions, themes, skills, TUI, keybindings, prompts, providers, models, and packages. Use when asked about pi itself.
 ---
 
-# Pi Documentation
+# Pi documentation
 
-Pi is a coding agent harness. The main documentation and related docs are located at:
+Use the installed pi documentation, not memory. Find the package root first:
 
-- Main documentation: /Users/tom.stian.ingebretson/.nvm/versions/node/v22.19.0/lib/node_modules/@mariozechner/pi-coding-agent/README.md
-- Additional docs: /Users/tom.stian.ingebretson/.nvm/versions/node/v22.19.0/lib/node_modules/@mariozechner/pi-coding-agent/docs
-- Examples: /Users/tom.stian.ingebretson/.nvm/versions/node/v22.19.0/lib/node_modules/@mariozechner/pi-coding-agent/examples
+```bash
+npm root -g
+find "$(npm root -g)" -maxdepth 3 -type d -name 'pi-coding-agent' -print
+```
 
-## Topic Index
+Read the package `README.md` and the relevant file under `docs/`:
 
-| Topic | File |
-|-------|------|
-| Extensions | `docs/extensions.md`, `examples/extensions/` |
+| Topic | Documentation |
+|---|---|
+| Extensions | `docs/extensions.md` |
 | Themes | `docs/themes.md` |
 | Skills | `docs/skills.md` |
 | Prompt templates | `docs/prompt-templates.md` |
-| TUI components | `docs/tui.md` |
+| TUI | `docs/tui.md` |
 | Keybindings | `docs/keybindings.md` |
-| SDK integrations | `docs/sdk.md` |
-| Custom providers | `docs/custom-provider.md` |
-| Adding models | `docs/models.md` |
-| Pi packages | `docs/packages.md` |
+| SDK | `docs/sdk.md` |
+| Providers/models | `docs/custom-provider.md`, `docs/models.md` |
+| Packages | `docs/packages.md` |
 
-## Usage
+Follow linked documentation when implementing an API; do not invent options or paths.
 
-When working on pi topics, read the relevant `.md` files completely and follow cross-references before implementing. Always read linked docs (e.g., `tui.md` for TUI API details).
+## Agent directory
 
-## This Installation
+Resolve the active directory before reading or writing configuration:
 
-**Agent dir:** `~/.config/pi/` (not the default `~/.pi/agent/`)
+```bash
+printf '%s\n' "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
+```
 
-This is set via `PI_CODING_AGENT_DIR=/Users/tom.stian.ingebretson/.config/pi` in the shell. All user config, extensions, skills, sessions, and settings live under `~/.config/pi/`.
+Typical locations are:
 
-| Path | Purpose |
-|------|---------|
-| `~/.config/pi/extensions/` | Global extensions |
-| `~/.config/pi/skills/` | Global skills |
-| `~/.config/pi/settings.json` | Settings |
-| `~/.config/pi/sessions/` | Sessions |
-
-> **Always resolve the actual agent dir before writing files.** Check `PI_CODING_AGENT_DIR` first (`echo $PI_CODING_AGENT_DIR`), then fall back to `~/.pi/agent/` if unset.
+- `~/.config/pi/extensions/`
+- `~/.config/pi/skills/`
+- `~/.config/pi/settings.json`
+- `~/.config/pi/sessions/`

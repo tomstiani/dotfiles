@@ -1,58 +1,45 @@
 ---
 name: self-review
-description: |
-  Review your own code before opening or requesting review on a PR.
-  Catches issues early, writes a strong PR description, and sets reviewers up for success.
-  Use when: the user wants to self-review, pre-flight their own PR, check their own diff,
-  or prepare code before asking for review.
-license: MIT
-metadata:
-  version: "1.0.0"
+description: Review your own diff before opening or requesting review on a pull request. Use for a PR pre-flight, change review, or PR preparation.
 ---
 
-# Self-Review
+# Self-review
 
-You help the user audit their own code before opening a PR. The goal is to catch issues themselves first, write a clear description, and make the reviewer's job easy.
+Use the `code-reviewer` checklist in this order: security, correctness, performance, maintainability, and testing.
 
-Reference the shared [code-reviewer](../code-reviewer/SKILL.md) checklist for security, performance, correctness, maintainability, and testing rules.
+## Inspect
 
-## Flow
-
-### 1. **Review your diff cold**
-Step away, then read it as a stranger would:
 ```bash
-git diff main...HEAD
+git status
+git diff
+git diff --stat
 ```
-Ask yourself:
-- Does this change do exactly what the ticket/issue asks — nothing more, nothing less?
-- Are there any debug artifacts, commented-out code, or console logs left in?
-- Would someone unfamiliar with the context understand what's happening?
 
-### 2. **Run the shared checklist**
-Apply the Review Process from `code-reviewer` in order:
-**Security → Performance → Correctness → Maintainability → Testing**
+Read the full diff and the surrounding callers. Confirm the change matches the issue, has no debug artifacts or secrets, and does not include unrelated work. Check generated files and lockfiles for intentional changes rather than rejecting them automatically.
 
-Flag anything you find before moving on.
+## Verify
 
-> **Generated files:** Unrelated changes to generated/codegen files (e.g. GraphQL types, schema dumps, mocks, lockfile churn from regeneration) are acceptable and do not block the PR. Note them so the author is aware, but don't treat them as scope violations or require reverting them.
+- Run the smallest relevant test, lint, or type-check commands.
+- Check error paths, input boundaries, authorization, and backwards compatibility.
+- Re-read the diff as a reviewer and identify likely questions or missing tests.
+- Do not claim a check passed unless it was run.
 
-### 3. **Write a clear PR description**
-A good description reduces review time and back-and-forth. Cover:
-- **What** changed and **why**
-- Trade-offs or decisions you made consciously
-- How to test or verify the change
-- Screenshots or recordings for UI changes
-- Anything you're uncertain about and want focused feedback on
+## Prepare the PR
 
-### 4. **Anticipate reviewer questions**
-Read through the diff one more time and ask: *what would I question if someone else wrote this?*
-Add inline comments on your own PR to pre-empt those questions.
+Record:
 
-### 5. **Pre-flight checklist**
-- [ ] Tests pass locally
-- [ ] No unintended files staged (e.g. `.env`, secrets) — unrelated generated/codegen files are OK
-- [ ] Branch is up to date with the base branch
-- [ ] PR is scoped — not mixing unrelated changes (generated files excepted)
-- [ ] PR description is filled out
+- What changed and why.
+- Important trade-offs or intentionally deferred work.
+- Exact verification commands and results.
+- Screenshots or recordings for UI changes.
+- Any uncertainty that needs reviewer attention.
 
-Only open the PR once all boxes are checked.
+Before requesting review:
+
+- [ ] Tests/checks run and results recorded.
+- [ ] No secrets, debug code, or unintended files.
+- [ ] Branch is based on the current target branch.
+- [ ] Scope is focused.
+- [ ] PR description is complete.
+
+Use `create-pr` to draft the description. Opening or updating the PR still requires explicit user approval.
