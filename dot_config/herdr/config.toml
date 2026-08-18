@@ -11,26 +11,81 @@ prefix = "ctrl+a"
 help = "prefix+?"
 detach = "prefix+d"
 reload_config = "prefix+r"
+close_workspace = "prefix+shift+q"
 new_tab = "prefix+c"
 split_vertical = "prefix+|"
 split_horizontal = "prefix+minus"
 workspace_picker = "prefix+j"
 navigate_workspace_down = "j"
 navigate_workspace_up = "k"
-focus_pane_left = "ctrl+alt+h"
-focus_pane_down = "ctrl+alt+j"
-focus_pane_up = "ctrl+alt+k"
-focus_pane_right = "ctrl+alt+l"
+focus_pane_left = "prefix+h"
+focus_pane_down = "prefix+down"
+focus_pane_up = "prefix+k"
+focus_pane_right = "prefix+l"
 swap_pane_left = "prefix+shift+h"
 swap_pane_down = "prefix+shift+j"
 swap_pane_up = "prefix+shift+k"
 swap_pane_right = "prefix+shift+l"
 zoom = "prefix+m"
 copy_mode = "prefix+["
-edit_scrollback = "prefix+e"
+edit_scrollback = "prefix+shift+e"
 switch_tab = "prefix+1..9"
 previous_tab = "prefix+p"
 next_tab = "prefix+n"
+
+[[keys.command]]
+key = "prefix+e"
+type = "shell"
+command = "~/.local/bin/herdr-nvim-adaptive toggle"
+description = "nvim sidebar"
+
+[[keys.command]]
+key = "prefix+o"
+type = "shell"
+command = "~/.local/bin/herdr-nvim-adaptive pick-file"
+description = "open agent file"
+
+[[keys.command]]
+key = "ctrl+h"
+type = "plugin_action"
+command = "vim-herdr-navigation.left"
+description = "navigate left (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+j"
+type = "plugin_action"
+command = "vim-herdr-navigation.down"
+description = "navigate down (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+k"
+type = "plugin_action"
+command = "vim-herdr-navigation.up"
+description = "navigate up (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "plugin_action"
+command = "vim-herdr-navigation.right"
+description = "navigate right (vim/herdr)"
+
+[[keys.command]]
+key = "prefix+shift+g"
+type = "plugin_action"
+command = "worktrunk.open"
+description = "Worktree: switch/create"
+
+[[keys.command]]
+key = "prefix+shift+c"
+type = "plugin_action"
+command = "worktrunk.open-current"
+description = "Worktree: from current"
+
+[[keys.command]]
+key = "prefix+shift+d"
+type = "plugin_action"
+command = "worktrunk.remove"
+description = "Worktree: remove"
 
 [[keys.command]]
 key = "prefix+t"
@@ -42,3 +97,7 @@ height = "80%"
 
 [ui]
 tab_bar_position = "bottom"
+
+[ui.toast]
+delivery = "herdr"
+delay_seconds = 1

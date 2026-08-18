@@ -3,6 +3,9 @@
 return {
   {
     'alexghergh/nvim-tmux-navigation',
+    cond = function()
+      return vim.env.HERDR_ENV ~= '1'
+    end,
     event = 'VeryLazy',
     opts = {
       disable_when_zoomed = true,

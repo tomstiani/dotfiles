@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+action="${1:-toggle}"
+herdr="${HERDR_BIN_PATH:-herdr}"
+config="${HERDR_NVIM_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/herdr-nvim/config.toml}"
+
+read -r width height < <(
+  "$herdr" api snapshot \
+    | jq -r '.result.snapshot as $s
+      | ($s.layouts[] | select(.tab_id == $s.focused_tab_id) | .area)
+      | "\(.width) \(.height)"' \
+    | head -1
+)
+
+position=right
+if [ "$(( ${height:-0} * 2 ))" -gt "${width:-0}" ]; then
+  position=bottom
+fi
+
+mkdir -p "$(dirname "$config")"
+cat > "$config" <<EOF
+[sidebar]
+nvim_bin = "nvim"
+position = "$position"
+
+[picker]
+scan_lines = 300
+max_files = 20
+EOF
+
+case "$action" in
+  toggle|pick-file|open-link)
+    exec "$herdr" plugin action invoke "$action" --plugin chmarax.herdr-nvim
+    ;;
+  *)
+    echo "usage: herdr-nvim-adaptive [toggle|pick-file|open-link]" >&2
+    exit 2
+    ;;
+esac

@@ -24,6 +24,7 @@ return {
     init = function()
       vim.api.nvim_create_autocmd('VimEnter', {
         callback = function()
+          if #vim.api.nvim_list_uis() == 0 then return end
           local arg = vim.fn.argv(0)
           if vim.fn.argc() == 0 then
             -- nvim opened with no arguments
