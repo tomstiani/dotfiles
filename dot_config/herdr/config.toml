@@ -1,0 +1,44 @@
+onboarding = false
+
+[theme]
+name = "catppuccin"
+
+[terminal]
+new_cwd = "follow"
+
+[keys]
+prefix = "ctrl+a"
+help = "prefix+?"
+detach = "prefix+d"
+reload_config = "prefix+r"
+new_tab = "prefix+c"
+split_vertical = "prefix+|"
+split_horizontal = "prefix+minus"
+workspace_picker = "prefix+j"
+navigate_workspace_down = "j"
+navigate_workspace_up = "k"
+focus_pane_left = "ctrl+alt+h"
+focus_pane_down = "ctrl+alt+j"
+focus_pane_up = "ctrl+alt+k"
+focus_pane_right = "ctrl+alt+l"
+swap_pane_left = "prefix+shift+h"
+swap_pane_down = "prefix+shift+j"
+swap_pane_up = "prefix+shift+k"
+swap_pane_right = "prefix+shift+l"
+zoom = "prefix+m"
+copy_mode = "prefix+["
+edit_scrollback = "prefix+e"
+switch_tab = "prefix+1..9"
+previous_tab = "prefix+p"
+next_tab = "prefix+n"
+
+[[keys.command]]
+key = "prefix+t"
+type = "popup"
+command = "exec \"${SHELL:-sh}\""
+description = "scratch terminal"
+width = "80%"
+height = "80%"
+
+[ui]
+tab_bar_position = "bottom"
