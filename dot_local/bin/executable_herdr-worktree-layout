@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+[[ ${HERDR_ENV:-} == 1 && -n ${HERDR_WORKSPACE_ID:-} ]] || exit 0
+if [[ -z ${HERDR_TAB_ID:-} ]]; then
+  tabs=$(herdr tab list --workspace "$HERDR_WORKSPACE_ID") || exit 0
+  HERDR_TAB_ID=$(jq -r '.result.tabs[]? | select(.label == "development") | .tab_id' <<<"$tabs" | head -n1)
+  [[ -n $HERDR_TAB_ID ]] || exit 0
+fi
+
+for _ in {1..50}; do
+  panes=$(herdr pane list --workspace "$HERDR_WORKSPACE_ID") || exit 0
+  editor=$(jq -r --arg tab "$HERDR_TAB_ID" '.result.panes[]? | select(.tab_id == $tab and .label == "editor") | .pane_id' <<<"$panes")
+  agent=$(jq -r --arg tab "$HERDR_TAB_ID" '.result.panes[]? | select(.tab_id == $tab and .label == "agent") | .pane_id' <<<"$panes")
+  shell=$(jq -r --arg tab "$HERDR_TAB_ID" '.result.panes[]? | select(.tab_id == $tab and .label == "shell") | .pane_id' <<<"$panes")
+  [[ -n $editor && -n $agent && -n $shell ]] && break
+  sleep 0.1
+done
+[[ -n ${editor:-} && -n ${agent:-} && -n ${shell:-} ]] || exit 0
+
+layout=$(herdr pane layout --pane "$editor") || exit 0
+read -r width height current < <(jq -er '.result.layout | [.area.width, .area.height, .splits[0].direction] | @tsv' <<<"$layout") || exit 0
+if ((width * 2 < height * 3)); then
+  direction=down
+  ratio=0.6
+else
+  direction=right
+  ratio=0.5
+fi
+[[ $current == "$direction" ]] && exit 0
+
+herdr pane move "$agent" --new-tab --workspace "$HERDR_WORKSPACE_ID" --label layout-tmp --no-focus >/dev/null || exit 0
+herdr pane move "$shell" --new-tab --workspace "$HERDR_WORKSPACE_ID" --label layout-tmp --no-focus >/dev/null || exit 0
+herdr pane move "$agent" --tab "$HERDR_TAB_ID" --target-pane "$editor" --split "$direction" --ratio "$ratio" --no-focus >/dev/null || exit 0
+herdr pane move "$shell" --tab "$HERDR_TAB_ID" --target-pane "$agent" --split down --ratio 0.5 --no-focus >/dev/null || exit 0

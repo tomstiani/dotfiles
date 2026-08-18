@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bridge=${HERDR_PR_BIN:-$HOME/.local/bin/herdr-pr}
+layout=${HERDR_LAYOUT_BIN:-$HOME/.local/bin/herdr-worktree-layout}
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+bin=$tmp/bin
+log=$tmp/herdr.log
+repo="$tmp/repo with spaces"
+checkout="$tmp/checkout with spaces"
+mkdir -p "$bin" "$repo"
+git -C "$repo" init -q
+git -C "$repo" config user.email test@example.com
+git -C "$repo" config user.name Test
+touch "$repo/README"
+git -C "$repo" add README
+git -C "$repo" commit -qm init
+git -C "$repo" worktree add -qb pr-test "$checkout"
+
+cat >"$bin/wt" <<'SH'
+#!/usr/bin/env bash
+case ${TEST_CASE:-success} in
+  malformed) printf '{\n' ;;
+  missing_path) printf '{}\n' ;;
+  *) jq -n --arg path "$TEST_CHECKOUT" '{action:"created", branch:"pr-test", path:$path}' ;;
+esac
+SH
+
+cat >"$bin/herdr" <<'SH'
+#!/usr/bin/env bash
+printf '%q ' "$@" >>"$TEST_LOG"; printf '\n' >>"$TEST_LOG"
+bad() { printf 'unexpected herdr invocation: %q ' "$@" >&2; exit 64; }
+case "$1 $2" in
+  'workspace focus')
+    [[ $# == 3 && $3 == w2 ]] || bad "$@"
+    printf '{"result":{}}\n' ;;
+  'tab list')
+    [[ $# == 4 && $3 == --workspace && $4 == w2 ]] || bad "$@"
+    if [[ ${TEST_CASE:-} == review_running || ${TEST_CASE:-} == review_idle ]]; then
+      printf '{"result":{"tabs":[{"tab_id":"w2:t2","label":"review-pr-42"}]}}\n'
+    else
+      printf '{"result":{"tabs":[{"tab_id":"w2:t1","label":"development"}]}}\n'
+    fi ;;
+  'tab focus')
+    [[ $# == 3 && ($3 == w2:t1 || $3 == w2:t2) ]] || bad "$@"
+    printf '{"result":{}}\n' ;;
+  'tab create')
+    [[ $# == 9 && $3 == --workspace && $4 == w2 && $5 == --cwd && $6 == "$TEST_CHECKOUT" && $7 == --label && $8 == review-pr-42 && $9 == --no-focus ]] || bad "$@"
+    printf '{"result":{"tab":{"tab_id":"w2:t2"},"root_pane":{"pane_id":"w2:p4"}}}\n' ;;
+  'pane list')
+    [[ $# == 4 && $3 == --workspace && $4 == w2 ]] || bad "$@"
+    if [[ ${TEST_CASE:-} == review_* ]]; then
+      jq -n --arg cwd "$TEST_CHECKOUT" '{result:{panes:[{pane_id:"w2:p1",tab_id:"w2:t1",label:"editor",cwd:$cwd},{pane_id:"w2:p2",tab_id:"w2:t1",label:"agent",cwd:$cwd},{pane_id:"w2:p3",tab_id:"w2:t1",label:"shell",cwd:$cwd},{pane_id:"w2:p4",tab_id:"w2:t2",cwd:$cwd}]}}'
+    else
+      jq -n --arg cwd "$TEST_CHECKOUT" '{result:{panes:[{pane_id:"w2:p1",tab_id:"w2:t1",label:"editor",cwd:$cwd},{pane_id:"w2:p2",tab_id:"w2:t1",label:"agent",cwd:$cwd},{pane_id:"w2:p3",tab_id:"w2:t1",label:"shell",cwd:$cwd}]}}'
+    fi ;;
+  'pane layout')
+    [[ $# == 4 && $3 == --pane && $4 == w2:p1 ]] || bad "$@"
+    if [[ ${TEST_CASE:-} == portrait ]]; then
+      printf '{"result":{"layout":{"area":{"width":100,"height":100},"splits":[{"direction":"right"}]}}}\n'
+    else
+      printf '{"result":{"layout":{"area":{"width":300,"height":100},"splits":[{"direction":"right"}]}}}\n'
+    fi ;;
+  'pane move')
+    [[ ${TEST_CASE:-} == portrait ]] || bad "$@"
+    printf '{"result":{}}\n' ;;
+  'pane process-info')
+    [[ $# == 4 && $3 == --pane && $4 == w2:p4 ]] || bad "$@"
+    if [[ ${TEST_CASE:-} == review_running ]]; then
+      printf '{"result":{"process_info":{"foreground_processes":[{"name":"tuicr","argv0":"tuicr"}]}}}\n'
+    else
+      printf '{"result":{"process_info":{"foreground_processes":[]}}}\n'
+    fi ;;
+  'pane run')
+    [[ $# == 4 && $3 == w2:p4 && $4 == 'tuicr pr 42' ]] || bad "$@"
+    printf '{"result":{}}\n' ;;
+  'worktree list')
+    [[ $# == 5 && $3 == --cwd && $4 == "$TEST_REPO" && $5 == --json ]] || bad "$@"
+    if [[ ${TEST_CASE:-} == existing || ${TEST_CASE:-} == review_running || ${TEST_CASE:-} == review_idle ]]; then
+      jq -n --arg path "$TEST_CHECKOUT" '{result:{source:{source_workspace_id:"w1"},worktrees:[{path:$path,open_workspace_id:"w2"}]}}'
+    else
+      printf '{"result":{"source":{"source_workspace_id":"w1"},"worktrees":[]}}\n'
+    fi ;;
+  'worktree open')
+    [[ $# == 9 && $3 == --workspace && $4 == w1 && $5 == --path && $6 == "$TEST_CHECKOUT" && $7 == --label && $8 == pr-test && $9 == --focus ]] || bad "$@"
+    printf '{"result":{"workspace":{"workspace_id":"w2"}}}\n' ;;
+  *) bad "$@" ;;
+esac
+SH
+
+for command in gh tuicr; do
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$bin/$command"
+done
+chmod +x "$bin"/*
+
+export PATH="$bin:/opt/homebrew/bin:/usr/bin:/bin"
+export HERDR_ENV=1 HERDR_SOCKET_PATH="$tmp/herdr.sock"
+TEST_REPO=$(cd "$repo" && pwd -P)
+TEST_CHECKOUT=$(cd "$checkout" && pwd -P)
+export TEST_REPO TEST_CHECKOUT TEST_LOG="$log"
+
+expect_fail() {
+  if "$bridge" "$@" >/dev/null 2>&1; then
+    printf 'expected failure: %q ' "$@" >&2
+    printf '\n' >&2
+    exit 1
+  fi
+}
+
+expect_fail nope "$repo" 42
+expect_fail work "$tmp/missing" 42
+expect_fail work "$repo" 0
+mv "$bin/tuicr" "$bin/tuicr.off"
+expect_fail review "$repo" 42
+mv "$bin/tuicr.off" "$bin/tuicr"
+
+TEST_CASE=malformed expect_fail work "$repo" 42
+TEST_CASE=missing_path expect_fail work "$repo" 42
+
+: >"$log"
+TEST_CASE=success "$bridge" work "$repo" 42
+grep -q '^worktree open ' "$log"
+
+: >"$log"
+HOME=$tmp TEST_CASE=success "$bridge" work '~/repo with spaces' 42
+grep -q '^worktree open ' "$log"
+
+: >"$log"
+TEST_CASE=existing "$bridge" work "$repo" 42
+! grep -q '^worktree open ' "$log"
+grep -q '^workspace focus w2 ' "$log"
+! grep -q '^pane move ' "$log"
+
+: >"$log"
+HERDR_WORKSPACE_ID=w2 HERDR_TAB_ID=w2:t1 TEST_CASE=portrait bash "$layout"
+grep -q '^pane move w2:p2 --new-tab ' "$log"
+grep -q '^pane move w2:p2 --tab w2:t1 --target-pane w2:p1 --split down --ratio 0.6 ' "$log"
+grep -q '^pane move w2:p3 --tab w2:t1 --target-pane w2:p2 --split down --ratio 0.5 ' "$log"
+
+: >"$log"
+TEST_CASE=review_running "$bridge" review "$repo" 42
+! grep -q '^tab create ' "$log"
+grep -q '^tab focus w2:t2 ' "$log"
+
+: >"$log"
+TEST_CASE=review_idle "$bridge" review "$repo" 42
+grep -q '^pane run w2:p4 tuicr\\ pr\\ 42 ' "$log"
+
+: >"$log"
+TEST_CASE=review_new "$bridge" review "$repo" 42
+grep -q '^worktree open ' "$log"
+grep -q '^tab create ' "$log"
+grep -q '^pane process-info --pane w2:p4 ' "$log"
+grep -q '^pane run w2:p4 tuicr\\ pr\\ 42 ' "$log"
+
+printf 'herdr-pr self-check passed\n'

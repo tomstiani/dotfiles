@@ -1,0 +1,18 @@
+repo = "*"
+
+[[tabs]]
+name = "development"
+
+[[tabs.panes]]
+label = "editor"
+command = "nvim ."
+
+[[tabs.panes]]
+label = "agent"
+command = "pi"
+split = "right"
+
+[[tabs.panes]]
+label = "shell"
+command = "~/.local/bin/herdr-worktree-layout"
+split = "down"

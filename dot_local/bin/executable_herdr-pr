@@ -1,0 +1,170 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+prog=${0##*/}
+layout_bin=${HERDR_LAYOUT_BIN:-${0%/*}/herdr-worktree-layout}
+mode=${1:-}
+repo_arg=${2:-}
+pr=${3:-}
+
+usage() {
+  printf 'usage: %s {work|review} <repo-path> <pr-number>\n' "$prog" >&2
+  exit 2
+}
+
+fail() {
+  local stage=$1 message=$2 body
+  body="$stage failed for ${repo:-$repo_arg} PR #$pr: ${message:0:500}"
+  if [[ ${HERDR_ENV:-} == 1 ]] && command -v herdr >/dev/null 2>&1; then
+    herdr notification show "$prog" --body "$body" --position bottom-right --sound request >/dev/null 2>&1 || true
+  fi
+  printf '%s: %s\n' "$prog" "$body" >&2
+  exit 1
+}
+
+[[ $# -eq 3 && ($mode == work || $mode == review) ]] || usage
+[[ $pr =~ ^[1-9][0-9]*$ ]] || fail validation 'PR number must be a positive decimal integer'
+case $repo_arg in
+  '~') repo_arg=$HOME ;;
+  '~/'*) repo_arg=$HOME/${repo_arg#\~/} ;;
+esac
+[[ -d $repo_arg ]] || fail validation 'repository path does not exist'
+
+repo=$(git -C "$repo_arg" rev-parse --show-toplevel 2>/dev/null) || fail validation 'path is not a Git repository'
+repo=$(cd "$repo" && pwd -P) || fail validation 'could not canonicalize repository path'
+
+commands=(herdr gh jq wt)
+[[ $mode == work ]] && commands+=("$layout_bin")
+[[ $mode == review ]] && commands+=(tuicr)
+for command in "${commands[@]}"; do
+  command -v "$command" >/dev/null 2>&1 || fail validation "$command is not installed"
+done
+
+[[ ${HERDR_ENV:-} == 1 && -n ${HERDR_SOCKET_PATH:-} ]] \
+  || fail Herdr 'run gh-dash inside a Herdr pane'
+
+lock_root=${TMPDIR:-/tmp}/herdr-pr-locks
+mkdir -p "$lock_root" || fail lock "could not create $lock_root"
+read -r lock_key _ < <(printf '%s\0%s\0' "$repo" "$pr" | cksum)
+lock=$lock_root/$lock_key
+mkdir "$lock" 2>/dev/null || fail lock 'another action for this PR is already running'
+cleanup() { rmdir "$lock" 2>/dev/null || true; }
+trap cleanup EXIT
+trap 'exit 130' HUP INT TERM
+
+canonical_dir() {
+  local path=$1
+  [[ -d $path ]] && (cd "$path" && pwd -P)
+}
+
+pane_is_idle() {
+  jq -e '.result.process_info as $p | ($p.foreground_processes | length == 0 or all(.[]; .pid == $p.shell_pid))' >/dev/null
+}
+
+wait_for_idle_pane() {
+  local pane=$1 deadline=$((SECONDS + 15)) process
+  while ((SECONDS < deadline)); do
+    process=$(herdr pane process-info --pane "$pane") || return 1
+    pane_is_idle <<<"$process" && return 0
+    sleep 0.1
+  done
+  return 1
+}
+
+wait_for_worktree_layout() {
+  local deadline=$((SECONDS + 5)) panes
+  while ((SECONDS < deadline)); do
+    panes=$(herdr pane list --workspace "$target_workspace") || return
+    [[ $(jq '[.result.panes[]? | select(.label == "editor" or .label == "agent" or .label == "shell")] | length' <<<"$panes") == 3 ]] && return
+    sleep 0.1
+  done
+}
+
+open_pr_workspace() {
+  local wt_json wt_error details source worktrees path open_id opened
+  wt_error=$(mktemp) || fail worktrunk 'could not create a temporary error file'
+  if ! wt_json=$(wt -C "$repo" switch "pr:$pr" --no-cd --format=json 2>"$wt_error"); then
+    details=$(<"$wt_error")
+    rm -f "$wt_error"
+    fail worktrunk "$details"
+  fi
+  rm -f "$wt_error"
+
+  checkout=$(jq -er '.path | select(type == "string" and length > 0)' <<<"$wt_json" 2>/dev/null) \
+    || fail worktrunk 'JSON output did not contain a checkout path'
+  checkout=$(canonical_dir "$checkout") || fail worktrunk "checkout path is not a directory: $checkout"
+  git -C "$checkout" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+    || fail worktrunk "checkout is not a Git worktree: $checkout"
+  branch=$(jq -er '.branch | select(type == "string" and length > 0)' <<<"$wt_json" 2>/dev/null) || branch="pr-$pr"
+
+  worktrees=$(herdr worktree list --cwd "$repo" --json) \
+    || fail Herdr 'could not list repository worktrees; open the repository in Herdr first'
+  jq -e '.result.worktrees | type == "array"' <<<"$worktrees" >/dev/null 2>&1 \
+    || fail Herdr 'worktree list returned malformed JSON'
+  source=$(jq -er '.result.source.source_workspace_id' <<<"$worktrees" 2>/dev/null) \
+    || fail Herdr 'no root workspace for the repository; open the repository in Herdr first'
+
+  while IFS=$'\t' read -r path open_id; do
+    [[ -n $open_id ]] || continue
+    path=$(canonical_dir "$path") || continue
+    if [[ $path == "$checkout" ]]; then
+      workspace_opened=0
+      target_workspace=$open_id
+      herdr workspace focus "$target_workspace" >/dev/null \
+        || fail Herdr "could not focus existing workspace $target_workspace"
+      return
+    fi
+  done < <(jq -r '.result.worktrees[] | [.path, (.open_workspace_id // "")] | @tsv' <<<"$worktrees")
+
+  opened=$(herdr worktree open --workspace "$source" --path "$checkout" --label "$branch" --focus) \
+    || fail Herdr "could not open worktree workspace; checkout remains at $checkout"
+  workspace_opened=1
+  target_workspace=$(jq -er '.result.workspace.workspace_id' <<<"$opened" 2>/dev/null) \
+    || fail Herdr "open response omitted the workspace ID; checkout remains at $checkout"
+  herdr workspace focus "$target_workspace" >/dev/null \
+    || fail Herdr "opened $target_workspace but could not focus it; checkout remains at $checkout"
+}
+
+work() {
+  local tab_id
+  open_pr_workspace
+  wait_for_worktree_layout
+  HERDR_WORKSPACE_ID=$target_workspace HERDR_TAB_ID= "$layout_bin"
+  tab_id=$(herdr tab list --workspace "$target_workspace" | jq -r '.result.tabs[]? | select(.label == "development") | .tab_id' | head -n1)
+  [[ -z $tab_id ]] || herdr tab focus "$tab_id" >/dev/null || fail Herdr "could not focus development tab $tab_id"
+}
+
+review() {
+  local label tabs tab_id panes pane process created
+  label="review-pr-$pr"
+  open_pr_workspace
+  ((workspace_opened)) && wait_for_worktree_layout
+
+  tabs=$(herdr tab list --workspace "$target_workspace") || fail Herdr 'could not list worktree tabs'
+  jq -e '.result.tabs | type == "array"' <<<"$tabs" >/dev/null 2>&1 \
+    || fail Herdr 'tab list returned malformed JSON'
+  tab_id=$(jq -r --arg label "$label" '.result.tabs[] | select(.label == $label) | .tab_id' <<<"$tabs" | head -n1)
+
+  if [[ -n $tab_id ]]; then
+    panes=$(herdr pane list --workspace "$target_workspace") || fail Herdr "could not inspect review tab $tab_id"
+    pane=$(jq -er --arg tab "$tab_id" '.result.panes[] | select(.tab_id == $tab) | .pane_id' <<<"$panes" 2>/dev/null | head -n1) \
+      || fail Herdr "review tab $tab_id has no pane"
+    process=$(herdr pane process-info --pane "$pane") || fail Herdr "could not inspect review pane $pane"
+    if ! jq -e '.result.process_info.foreground_processes[]? | select(.name == "tuicr" or ((.argv0 // "") | split("/") | last) == "tuicr")' <<<"$process" >/dev/null; then
+      pane_is_idle <<<"$process" || fail tuicr "review tab $tab_id is occupied by another process"
+      herdr pane run "$pane" "tuicr pr $pr" >/dev/null || fail tuicr "could not restart in pane $pane"
+    fi
+    herdr tab focus "$tab_id" >/dev/null || fail Herdr "could not focus review tab $tab_id"
+    return
+  fi
+
+  created=$(herdr tab create --workspace "$target_workspace" --cwd "$checkout" --label "$label" --no-focus) \
+    || fail Herdr 'could not create review tab'
+  tab_id=$(jq -er '.result.tab.tab_id' <<<"$created" 2>/dev/null) || fail Herdr 'create response omitted the tab ID'
+  pane=$(jq -er '.result.root_pane.pane_id' <<<"$created" 2>/dev/null) || fail Herdr 'create response omitted the root pane ID'
+  wait_for_idle_pane "$pane" || fail Herdr "root pane $pane did not become ready"
+  herdr pane run "$pane" "tuicr pr $pr" >/dev/null || fail tuicr "could not start in pane $pane"
+  herdr tab focus "$tab_id" >/dev/null || fail Herdr "could not focus review tab $tab_id"
+}
+
+"$mode"

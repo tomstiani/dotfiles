@@ -1,0 +1,25 @@
+{
+  "enabled": true,
+  "patterns": [
+    {
+      "filePattern": ["**/*.env*", "**/*.vars*"],
+      "cloakPattern": "(=).+",
+      "replace": "$1*"
+    },
+    {
+      "filePattern": ["**/auth.json", "**/*.opencode.json", "**/opencode.json"],
+      "cloakPattern": "(\\\"(?:token|access|refresh|accessToken|refreshToken|apiKey|secret|password|clientSecret|idToken|sessionToken|authorization)\\\"\\s*:\\s*\\\")[^\\\"]+",
+      "replace": "$1*"
+    },
+    {
+      "filePattern": ["**/*.json", "**/*.jsonc"],
+      "cloakPattern": "(\\\"(?:CLOUDFLARE_ACCESS_TEAM_DOMAIN|CLOUDFLARE_ACCESS_AUD)\\\"\\s*:\\s*\\\")[^\\\"]+",
+      "replace": "$1*"
+    },
+    {
+      "filePattern": "**/config.toml",
+      "cloakPattern": "(token\\s*=\\s*).+",
+      "replace": "$1*"
+    }
+  ]
+}

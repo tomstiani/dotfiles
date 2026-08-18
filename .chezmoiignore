@@ -1,3 +1,6 @@
+# Repository documentation
+README.md
+
 # General secrets guard
 *.env
 **/*.env
@@ -27,6 +30,9 @@
 .config/pi/extensions/**
 !.config/pi/extensions
 !.config/pi/extensions/chezmoi.ts
+!.config/pi/extensions/git-interceptor.ts
+!.config/pi/extensions/pi-cloak.ts
+!.config/pi/extensions/toggle-skills.ts
 .config/pi/temp/**
 .config/pi/.DS_Store
 
