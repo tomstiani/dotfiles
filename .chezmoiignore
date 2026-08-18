@@ -33,6 +33,7 @@ README.md
 !.config/pi/extensions/git-interceptor.ts
 !.config/pi/extensions/pi-cloak.ts
 !.config/pi/extensions/toggle-skills.ts
+!.config/pi/extensions/herdr-ask-user.ts
 .config/pi/temp/**
 .config/pi/.DS_Store
 
