@@ -11,8 +11,6 @@ alias gg='lazygit'
 alias vim='nvim'
 alias vi='nvim'
 
-alias oc='opencode --port'
-
 # ─── Navigation ───────────────────────────────────────────────────────────────
 alias h='cd ~'
 alias ..='cd ..'
@@ -55,3 +53,6 @@ alias wts='wt switch'
 alias wtc='wt switch --create'
 alias wtl='wt list'
 alias wtr='wt remove'
+
+# ─── Chezmoi ─────────────────────────────────────────────────────────────────
+alias cm='chezmoi'
