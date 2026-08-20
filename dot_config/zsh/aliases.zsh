@@ -14,6 +14,7 @@ alias vi='nvim'
 alias oc='opencode --port'
 
 # ─── Navigation ───────────────────────────────────────────────────────────────
+alias h='cd ~'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
