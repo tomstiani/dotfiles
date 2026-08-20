@@ -1,6 +1,6 @@
 ---
 name: github-cli
-description: Use GitHub through the gh CLI for repositories, issues, pull requests, Actions, releases, projects, and searches. Never call api.github.com with curl, fetch, or a custom HTTP client.
+description: Use GitHub through the gh CLI for repositories, issues, pull requests, stacked pull requests, Actions, releases, projects, and searches. Never call api.github.com with curl, fetch, or a custom HTTP client.
 ---
 
 # GitHub CLI
@@ -53,6 +53,24 @@ gh pr merge NUMBER --squash --delete-branch
 ```
 
 Use `gh pr create --draft` for draft PRs. Review and merge are mutating actions and always require approval.
+
+## Stacked pull requests
+
+GitHub's stacked PR feature is in public preview and requires branches in the same repository.
+
+```bash
+gh extension install github/gh-stack
+gh stack init FIRST-BRANCH
+# Commit the first layer, then add and commit each next layer.
+gh stack add NEXT-BRANCH
+gh stack view
+gh stack submit
+gh stack sync
+gh stack switch
+gh stack merge
+```
+
+`gh stack submit`, `sync`, and `merge` mutate GitHub state; show the command and get explicit approval first. Use `gh stack COMMAND --help` for restructuring, rebasing, linking existing PRs, or other less common operations.
 
 ## Actions
 
