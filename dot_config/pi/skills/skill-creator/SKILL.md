@@ -19,10 +19,11 @@ Each skill needs `SKILL.md` with YAML frontmatter:
 ---
 name: example-skill
 description: What it does and when to use it.
+disable-model-invocation: false
 ---
 ```
 
-Use lowercase hyphenated names matching the directory. Keep descriptions specific: include the task and concrete triggers.
+Set `disable-model-invocation: true` only for skills users should invoke explicitly with `/skill:name`. Use lowercase hyphenated names matching the directory. Keep descriptions specific: include the task and concrete triggers.
 
 ## Structure
 

@@ -102,11 +102,11 @@ if echo "$description" | grep -q '[<>]'; then
 fi
 
 # Check for disallowed frontmatter fields
-allowed_fields="name|description|license|compatibility|metadata"
+allowed_fields="name|description|license|compatibility|metadata|allowed-tools|disable-model-invocation"
 unknown_fields=$(echo "$frontmatter" | grep -E '^[a-z-]+:' | sed 's/:.*//' | grep -Ev "^($allowed_fields)$" || true)
 
 if [[ -n "$unknown_fields" ]]; then
-    error "Unknown frontmatter field(s): $(echo $unknown_fields | tr '\n' ', ' | sed 's/,$//'). Allowed: name, description, license, compatibility, metadata"
+    error "Unknown frontmatter field(s): $(echo $unknown_fields | tr '\n' ', ' | sed 's/,$//'). Allowed: ${allowed_fields//|/, }"
 fi
 
 success "Skill '$name' is valid!"

@@ -1,35 +1,11 @@
 import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
-import { homedir } from "node:os";
-import { basename, dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, relative, resolve } from "node:path";
 import { promisify } from "node:util";
-import { getAgentDir, type ExtensionAPI, type ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 
 const execFileAsync = promisify(execFile);
 type Skill = { name: string; file: string; manualOnly: boolean };
-
-function roots(cwd: string): string[] {
-  return [...new Set([
-    join(getAgentDir(), "skills"),
-    join(homedir(), ".agents", "skills"),
-    resolve(cwd, ".pi/skills"),
-    resolve(cwd, ".agents/skills"),
-  ])];
-}
-
-async function findSkills(root: string, result: string[]): Promise<void> {
-  let entries;
-  try {
-    entries = await fs.readdir(root, { withFileTypes: true });
-  } catch {
-    return;
-  }
-  for (const entry of entries) {
-    const path = join(root, entry.name);
-    if (entry.isDirectory()) await findSkills(path, result);
-    else if (entry.name === "SKILL.md") result.push(path);
-  }
-}
 
 function readSkill(file: string, raw: string): Skill {
   const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(raw)?.[1] ?? "";
@@ -76,15 +52,13 @@ async function applyManaged(file: string): Promise<void> {
   await execFileAsync("chezmoi", ["apply", "--verbose", file], { maxBuffer: 10 * 1024 * 1024 });
 }
 
-async function toggleSkills(ctx: ExtensionCommandContext): Promise<void> {
+async function toggleSkills(ctx: ExtensionCommandContext, files: string[]): Promise<void> {
   if (!ctx.hasUI) {
     ctx.ui.notify("/toggle-skills requires interactive mode", "error");
     return;
   }
 
-  const files: string[] = [];
-  for (const root of roots(ctx.cwd)) await findSkills(root, files);
-  const skills = await Promise.all(files.sort().map(async (file) => readSkill(file, await fs.readFile(file, "utf8"))));
+  const skills = await Promise.all([...new Set(files)].sort().map(async (file) => readSkill(file, await fs.readFile(file, "utf8"))));
   if (skills.length === 0) {
     ctx.ui.notify("No skills found", "info");
     return;
@@ -113,7 +87,10 @@ export default function toggleSkillsExtension(pi: ExtensionAPI) {
     description: "Toggle whether skills are agent-invocable or manual-only",
     handler: async (_args, ctx) => {
       try {
-        await toggleSkills(ctx);
+        const files = pi.getCommands()
+          .filter((command) => command.source === "skill")
+          .map((command) => command.sourceInfo.path);
+        await toggleSkills(ctx, files);
       } catch (error) {
         ctx.ui.notify(`toggle-skills failed: ${error instanceof Error ? error.message : String(error)}`, "error");
       }
