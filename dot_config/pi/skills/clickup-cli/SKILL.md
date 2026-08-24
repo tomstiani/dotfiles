@@ -43,6 +43,20 @@ clickup-cli task subtask PARENT_ID NAME [-c] [-d DESCRIPTION] [-l LIST_ID]
 
 Descriptions accept Markdown. Assignee filters use numeric user IDs; `assignees[]=me` is not supported.
 
+### Create a top-level task
+
+The CLI cannot create top-level tasks or assign them. After approval, use the bundled helper, which resolves the authenticated user's numeric ID when `--assign-me` is passed:
+
+```bash
+~/.config/pi/skills/clickup-cli/scripts/create-task.py LIST_ID "Task title" \
+  --description-file /tmp/clickup-task.md \
+  --status "to do" \
+  --assign-me \
+  --yes
+```
+
+Before approval, show the title, target list, assignee, and command without running it. Afterwards, verify with `clickup-cli task get INTERNAL_TASK_ID`.
+
 ## Spaces and lists
 
 ```bash
@@ -52,7 +66,7 @@ clickup-cli list info LIST_ID
 clickup-cli list tasks LIST_ID [-a] [-A USER_IDS]
 ```
 
-Use `list info` to discover valid statuses before updating a task.
+Use `list info` to discover valid statuses before updating a task. For "current sprint", inspect the space structure, choose the sprint whose date range contains today, and confirm it with `list info`.
 
 ## Comments and time
 
