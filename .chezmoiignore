@@ -34,6 +34,8 @@ README.md
 !.config/pi/extensions/pi-cloak.ts
 !.config/pi/extensions/toggle-skills.ts
 !.config/pi/extensions/herdr-ask-user.ts
+!.config/pi/extensions/pi-permission-system
+!.config/pi/extensions/pi-permission-system/config.json
 .config/pi/temp/**
 .config/pi/.DS_Store
 
