@@ -11,10 +11,7 @@ export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 
 # pnpm
 export PNPM_HOME="$HOME/Library/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
+path=("$PNPM_HOME/bin" ${path:#"$PNPM_HOME/bin"})
 
 # bun
 export BUN_INSTALL="$HOME/.bun"

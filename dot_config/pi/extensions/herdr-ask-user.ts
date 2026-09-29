@@ -1,9 +1,12 @@
 import type { ExtensionAPI, ExtensionUIContext } from "@earendil-works/pi-coding-agent";
 
 const ASK_USER_BLOCKED_EVENT = "rpiv:ask-user:blocked";
+const PERMISSION_PROMPT_EVENT = "permissions:ui_prompt";
+const PERMISSION_DECISION_EVENT = "permissions:decision";
 const WRAPPED = Symbol.for("herdr.hitl-ui-wrapped");
 
 export default function (pi: ExtensionAPI) {
+	const permissionPrompts = new Set<string>();
 	const report = (active: boolean) => pi.events.emit("herdr:blocked", {
 		active,
 		...(active ? { label: "Waiting for user response" } : {}),
@@ -12,6 +15,19 @@ export default function (pi: ExtensionAPI) {
 	pi.events.on(ASK_USER_BLOCKED_EVENT, (data) => {
 		const active = (data as { active?: unknown } | undefined)?.active;
 		if (typeof active === "boolean") report(active);
+	});
+
+	pi.events.on(PERMISSION_PROMPT_EVENT, (data) => {
+		const requestId = (data as { requestId?: unknown } | undefined)?.requestId;
+		if (typeof requestId !== "string" || permissionPrompts.has(requestId)) return;
+		permissionPrompts.add(requestId);
+		report(true);
+	});
+
+	pi.events.on(PERMISSION_DECISION_EVENT, (data) => {
+		const requestId = (data as { requestId?: unknown } | undefined)?.requestId;
+		if (typeof requestId !== "string" || !permissionPrompts.delete(requestId)) return;
+		report(false);
 	});
 
 	pi.on("session_start", (_event, ctx) => {

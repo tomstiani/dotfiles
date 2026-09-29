@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+
+if [ "${1-}" = --open ]; then
+  session=$2
+  cwd=$3
+  branch=$4
+  tuios new "$session" --detach
+  tuios new-window "$branch" --session "$session" --cwd "$cwd" --no-focus >/dev/null
+  exec tuios run-command --session "$session" CloseWindow
+fi
+
+branch=${1-}
+if [ -z "$branch" ]; then
+  printf 'New branch (leave blank to browse): '
+  IFS= read -r branch
+fi
+
+if [ -n "$branch" ]; then
+  exec wt switch --create "$branch" -x "$0" -- --open '{{ repo }}-{{ branch | sanitize }}' '{{ worktree_path }}' '{{ branch | sanitize }}'
+fi
+
+exec wt switch --branches --remotes -x "$0" -- --open '{{ repo }}-{{ branch | sanitize }}' '{{ worktree_path }}' '{{ branch | sanitize }}'
